@@ -1,250 +1,187 @@
-
 # Vx-passivation-mlff
 
-X-type ligand passivation at defect sites on nanocrystal surfaces with M3GNet-based structural relaxation and adsorption energy evaluation.
+X-type ligand passivation at defect sites on nanocrystal surfaces with M3GNet-based structural relaxation and adsorption-energy evaluation.
 
-## What this repository contains
+## Repository
 
-This repository provides a Gradio-based application for:
+Source code and updates are available at:
 
-- attaching X-type ligands to defective nanocrystal surfaces,
-- generating multiple candidate NC+ligand geometries,
-- optionally relaxing the neutral ligand and attached NC+ligand structures with a trained M3GNet / MatGL model,
-- estimating adsorption energies, and
-- exporting summary tables and downloadable structure files.
+`https://github.com/kushalsamanta/Vx-passivation-mlff`
 
-Repository files:
+## Overview
 
-- `app.py` — the main Gradio application
-- `requirements.txt` — Python dependencies for Google Colab or local installation
-- `README.md` — setup and usage instructions
+This application is built for automated ligand passivation studies on defective nanocrystal surfaces. It enables users to:
 
----
+- upload a defective nanocrystal structure,
+- upload one ligand or a batch of ligands,
+- identify compatible X-type ligand head groups such as phosphonic, sulfonic, and carboxylic motifs,
+- generate multiple candidate attached NC+ligand configurations,
+- optionally relax the isolated ligand and the NC+ligand structures using an uploaded MatGL/M3GNet model,
+- evaluate the adsorption energy for the most stable relaxed configuration.
 
-## What to do next after uploading these files to GitHub
+## Key capabilities
 
-Since you have already uploaded:
+- Single-ligand and batch-ligand workflows
+- Support for `.vasp`, `.cif`, `.poscar`, and `.contcar` files
+- Automatic generation of multiple ligand orientations near the defect site
+- Optional M3GNet relaxation for:
+  - the neutral isolated ligand,
+  - each selected NC+ligand configuration
+- Automatic selection of the lowest-energy relaxed NC+ligand structure
+- Downloadable result files for summary and structures
 
-- `app.py`
-- `requirements.txt`
-- `README.md`
-
-these are the next steps.
-
-### Option 1: Use it through Google Colab
-
-This is the easiest route if you want to share the app with others and let them run it on their own Colab session.
-
-#### Step 1
-Open your GitHub repository and copy its URL.
-
-#### Step 2
-Create a new Google Colab notebook.
-
-#### Step 3
-In the first cell, clone your repository:
-
-```python
-!git clone https://github.com/YOUR-USERNAME/YOUR-REPO-NAME.git
-%cd YOUR-REPO-NAME
-```
-
-Replace:
-
-- `YOUR-USERNAME` with your GitHub username
-- `YOUR-REPO-NAME` with your repository name
-
-#### Step 4
-Install the required packages from `requirements.txt`:
-
-```python
-!pip install --no-cache-dir -r requirements.txt
-```
-
-If needed, restart the runtime once after installation.
-
-#### Step 5
-Run the app:
-
-```python
-!python app.py
-```
-
-If your app uses Gradio public sharing, it will print a temporary public link in the notebook output.
-
-#### Step 6
-Use the app interface in the generated link.
-
-Users can then:
-
-- upload the defective nanocrystal structure,
-- upload one ligand or multiple ligands,
-- optionally upload the trained M3GNet model ZIP,
-- run the workflow,
-- download the generated structures and summary files.
-
----
-
-### Option 2: Run locally on your computer
-
-If someone wants to run the code locally:
-
-#### Step 1
-Clone the repository:
-
-```bash
-git clone https://github.com/YOUR-USERNAME/YOUR-REPO-NAME.git
-cd YOUR-REPO-NAME
-```
-
-#### Step 2
-Create a virtual environment:
-
-```bash
-python -m venv venv
-source venv/bin/activate
-```
-
-On Windows:
-
-```bash
-venv\Scripts\activate
-```
-
-#### Step 3
-Install dependencies:
-
-```bash
-pip install --no-cache-dir -r requirements.txt
-```
-
-#### Step 4
-Run the app:
-
-```bash
-python app.py
-```
-
-Then open the local Gradio URL shown in the terminal.
-
----
-
-## Recommended Google Colab workflow for users
-
-For users who only want to run calculations and do not want to manually set up anything complicated, follow these steps.
-
-### Step 1: Open Colab
-Go to Google Colab and create a new notebook.
-
-### Step 2: Clone the repository
-Paste and run:
-
-```python
-!git clone https://github.com/YOUR-USERNAME/YOUR-REPO-NAME.git
-%cd YOUR-REPO-NAME
-```
-
-### Step 3: Install packages
-Paste and run:
-
-```python
-!pip install --no-cache-dir -r requirements.txt
-```
-
-### Step 4: Launch the app
-Paste and run:
-
-```python
-!python app.py
-```
-
-### Step 5: Use the interface
-After the Gradio link appears:
-
-- open the link,
-- upload structures,
-- run the workflow,
-- download the output files.
-
----
-
-## Input files expected by the app
+## Required inputs
 
 ### 1. Defective nanocrystal structure
-Accepted formats include:
 
-- POSCAR / VASP
-- CIF
-- POSCAR-like files
+Upload a defective nanocrystal structure in one of the following formats:
+
+- `.vasp`
+- `.cif`
+- `.poscar`
+- `.contcar`
 
 ### 2. Ligand input
-You may provide:
 
-- one single ligand file, or
-- multiple ligand files, or
-- one ZIP archive containing many ligand files.
+Users may provide either:
 
-### 3. Optional trained M3GNet / MatGL model ZIP
-The uploaded ZIP should contain:
+- one ligand structure file,
+- multiple ligand structure files, or
+- one ZIP archive containing multiple ligand files
+
+Supported ligand formats:
+
+- `.vasp`
+- `.cif`
+- `.poscar`
+- `.contcar`
+
+### 3. Optional MatGL/M3GNet model ZIP
+
+If structural relaxation is required, upload one ZIP file containing a trained MatGL/M3GNet model.
+
+The ZIP file should contain:
 
 - `model.pt`
 - `state.pt`
 - `model.json`
 
-Supported ZIP layouts:
+Accepted layouts include:
 
 ```text
 model.zip
-├── model.pt
-├── state.pt
-└── model.json
+├─ model.pt
+├─ state.pt
+└─ model.json
 ```
 
 or
 
 ```text
 model.zip
-└── out/
-    ├── model.pt
-    ├── state.pt
-    └── model.json
+└─ out/
+   ├─ model.pt
+   ├─ state.pt
+   └─ model.json
 ```
 
----
+## Installation
 
-## What the app does
+Clone the repository:
 
-For each ligand, the workflow can:
+```bash
+git clone https://github.com/kushalsamanta/Vx-passivation-mlff.git
+cd Vx-passivation-mlff
+```
 
-1. identify the ligand head-group family,
-2. generate possible attached NC+ligand structures,
-3. save multiple candidate configurations,
-4. relax the neutral ligand with M3GNet,
-5. relax the attached NC+ligand structures with M3GNet,
-6. select the lowest-energy relaxed NC+ligand configuration,
-7. compute adsorption energy,
-8. export a summary CSV and downloadable ZIP files.
+Install the required Python packages:
 
----
+```bash
+pip install --no-cache-dir -r requirements.txt
+```
+
+## Running the application locally
+
+Launch the Gradio application with:
+
+```bash
+python app.py
+```
+
+After startup, Gradio prints a local URL in the terminal. Open that link in a browser to use the app.
+
+## Running the application in Google Colab
+
+This project can also be used from Google Colab.
+
+### Step 1: Open a new Colab notebook
+
+Create a fresh notebook in Google Colab.
+
+### Step 2: Clone the repository
+
+Run:
+
+```python
+!git clone https://github.com/kushalsamanta/Vx-passivation-mlff.git
+%cd Vx-passivation-mlff
+```
+
+### Step 3: Install dependencies
+
+Run:
+
+```python
+!pip install --no-cache-dir -r requirements.txt
+```
+
+### Step 4: Launch the app
+
+Run:
+
+```python
+!python app.py
+```
+
+Once the application starts, Colab will display a Gradio link. Open that link to use the interface.
+
+## Standard workflow
+
+A typical calculation proceeds as follows:
+
+1. Upload the defective nanocrystal structure.
+2. Upload either one ligand file, multiple ligand files, or one ZIP archive containing ligand files.
+3. Optionally upload a trained MatGL/M3GNet model ZIP.
+4. Enter the defect-site coordinates and relevant workflow parameters.
+5. Run the attachment and relaxation workflow.
+6. Review logs, energies, and downloadable output files.
 
 ## Output files
 
-The application generates:
+The application can generate the following outputs.
 
-- `summary.csv` — summary of all ligands and calculated energies
-- ZIP of all attached NC+ligand candidate structures
-- ZIP of best relaxed NC+ligand structures
+### Summary CSV
 
-Depending on the workflow settings, the outputs may include:
+The summary table may include:
 
-- best relaxed NC+ligand energy,
-- relaxed neutral ligand energy,
-- adsorption energy,
-- selected best configuration index.
+- ligand name
+- detected ligand family
+- number of attached configurations
+- best relaxed configuration name
+- best relaxed NC+ligand energy
+- relaxed neutral ligand energy
+- adsorption energy
+- workflow status
 
----
+### ZIP of attached NC+ligand configurations
 
-## Adsorption energy expression
+Contains candidate attached structures before relaxation.
+
+### ZIP of best relaxed NC+ligand structures
+
+Contains the lowest-energy relaxed structure for each ligand, when relaxation succeeds.
+
+## Adsorption energy
 
 The adsorption energy is evaluated as:
 
@@ -258,71 +195,43 @@ with:
 1/2 E[H2] = -3.393237 eV
 ```
 
----
+## Notes for users
 
-## Example Colab notebook cells
+- The application supports both single-ligand and batch-ligand calculations.
+- When relaxation is enabled and a valid model ZIP is supplied, the app relaxes the separate neutral ligand.
+- The app also relaxes the selected NC+ligand configurations and retains the most stable relaxed structure.
+- If no model ZIP is supplied, the structure-generation workflow can still be used without relaxation.
 
-### Cell 1: Clone repository
+## Troubleshooting
 
-```python
-!git clone https://github.com/YOUR-USERNAME/YOUR-REPO-NAME.git
-%cd YOUR-REPO-NAME
-```
+### Model loading fails
 
-### Cell 2: Install dependencies
+Check that:
 
-```python
-!pip install --no-cache-dir -r requirements.txt
-```
+- the ZIP contains `model.pt`, `state.pt`, and `model.json`,
+- these files are either at the ZIP root or inside one folder,
+- the installed package versions are compatible with the uploaded model.
 
-### Cell 3: Run the app
+### No relaxed structure is produced
 
-```python
-!python app.py
-```
+Check that:
 
----
+- relaxation is enabled,
+- a valid model ZIP has been uploaded,
+- the log window does not report a backend or model-loading error.
 
-## If installation fails in Colab
+### No valid attached configuration is found
 
-Try these steps:
+Check that:
 
-1. Restart the runtime.
-2. Run the installation cell again.
-3. Ensure that `requirements.txt` is present in the repository root.
-4. Make sure the uploaded M3GNet ZIP contains the correct files.
+- the defect-site coordinates are correct,
+- the ligand contains a supported passivating head group,
+- the uploaded geometry is chemically reasonable.
 
----
+## Authors
 
-## Suggested repository structure
+Kushal Samanta<sup>a,b</sup>, Jyoti Bharti<sup>c</sup>, Arun Mannodi-Kanakkithodi<sup>b*</sup>, Dibyajyoti Ghosh<sup>a,c*</sup>
 
-```text
-Vx-passivation-mlff/
-├── app.py
-├── requirements.txt
-└── README.md
-```
-
----
-
-## Notes for sharing with others
-
-If you want others to use your workflow easily:
-
-- keep `app.py`, `requirements.txt`, and `README.md` in the repository root,
-- share the GitHub repository link,
-- also share one prepared Google Colab notebook that clones the repository and runs it.
-
-This is usually the easiest method for collaborators.
-
----
-
-## Citation / acknowledgement
-
-If you use this workflow in academic work, please cite the corresponding manuscript, software model, and dataset as appropriate.
-
----
-
-## Contact
-
-For questions, issues, or collaboration, please contact the repository owner.
+<sup>a</sup> Department of Materials Science and Engineering, Indian Institute of Technology, Delhi-110016, India  
+<sup>b</sup> School of Materials Engineering, Purdue University, West Lafayette, IN 47907, United States of America  
+<sup>c</sup> Department of Chemistry, Indian Institute of Technology, Delhi-110016, India
