@@ -1,4 +1,3 @@
-%%writefile app.py
 import os
 import math
 import copy
