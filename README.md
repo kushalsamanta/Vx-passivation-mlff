@@ -1,124 +1,38 @@
 # Vx-passivation-mlff
 
-X-type ligand passivation at defect sites on nanocrystal surfaces with M3GNet-based structural relaxation and adsorption-energy evaluation.
-
-## Repository
-
-Source code and updates are available at:
-
-`https://github.com/kushalsamanta/Vx-passivation-mlff`
+X-type ligand passivation at defect sites on nanocrystal surfaces with M3GNet-based structural relaxation and adsorption energy evaluation.
 
 ## Overview
 
-This application is built for automated ligand passivation studies on defective nanocrystal surfaces. It enables users to:
+This repository provides a Gradio-based application for:
 
-- upload a defective nanocrystal structure,
-- upload one ligand or a batch of ligands,
-- identify compatible X-type ligand head groups such as phosphonic, sulfonic, and carboxylic motifs,
-- generate multiple candidate attached NC+ligand configurations,
-- optionally relax the isolated ligand and the NC+ligand structures using an uploaded MatGL/M3GNet model,
-- evaluate the adsorption energy for the most stable relaxed configuration.
+- attaching X-type ligands to defective nanocrystal surfaces,
+- generating multiple candidate NC+ligand geometries,
+- optionally relaxing the neutral ligand and attached NC+ligand structures with a trained M3GNet / MatGL model,
+- estimating adsorption energies, and
+- exporting summary tables and downloadable structure files.
 
-## Key capabilities
-
-- Single-ligand and batch-ligand workflows
-- Support for `.vasp`, `.cif`, `.poscar`, and `.contcar` files
-- Automatic generation of multiple ligand orientations near the defect site
-- Optional M3GNet relaxation for:
-  - the neutral isolated ligand,
-  - each selected NC+ligand configuration
-- Automatic selection of the lowest-energy relaxed NC+ligand structure
-- Downloadable result files for summary and structures
-
-## Required inputs
-
-### 1. Defective nanocrystal structure
-
-Upload a defective nanocrystal structure in one of the following formats:
-
-- `.vasp`
-- `.cif`
-- `.poscar`
-- `.contcar`
-
-### 2. Ligand input
-
-Users may provide either:
-
-- one ligand structure file,
-- multiple ligand structure files, or
-- one ZIP archive containing multiple ligand files
-
-Supported ligand formats:
-
-- `.vasp`
-- `.cif`
-- `.poscar`
-- `.contcar`
-
-### 3. Optional MatGL/M3GNet model ZIP
-
-If structural relaxation is required, upload one ZIP file containing a trained MatGL/M3GNet model.
-
-The ZIP file should contain:
-
-- `model.pt`
-- `state.pt`
-- `model.json`
-
-Accepted layouts include:
+Repository URL:
 
 ```text
-model.zip
-├─ model.pt
-├─ state.pt
-└─ model.json
+https://github.com/kushalsamanta/Vx-passivation-mlff
 ```
 
-or
+## Repository contents
 
-```text
-model.zip
-└─ out/
-   ├─ model.pt
-   ├─ state.pt
-   └─ model.json
-```
+- `app.py` — main Gradio application
+- `requirements.txt` — Python dependencies
+- `README.md` — setup and usage instructions
 
-## Installation
+## Recommended usage: Google Colab
 
-Clone the repository:
+Google Colab is the simplest way to run this application without a local installation.
 
-```bash
-git clone https://github.com/kushalsamanta/Vx-passivation-mlff.git
-cd Vx-passivation-mlff
-```
+### Step 1 — Open a new Colab notebook
 
-Install the required Python packages:
+Create a new notebook in Google Colab.
 
-```bash
-pip install --no-cache-dir -r requirements.txt
-```
-
-## Running the application locally
-
-Launch the Gradio application with:
-
-```bash
-python app.py
-```
-
-After startup, Gradio prints a local URL in the terminal. Open that link in a browser to use the app.
-
-## Running the application in Google Colab
-
-This project can also be used from Google Colab.
-
-### Step 1: Open a new Colab notebook
-
-Create a fresh notebook in Google Colab.
-
-### Step 2: Clone the repository
+### Step 2 — Clone the repository
 
 Run:
 
@@ -127,7 +41,7 @@ Run:
 %cd Vx-passivation-mlff
 ```
 
-### Step 3: Install dependencies
+### Step 3 — Install the required packages
 
 Run:
 
@@ -135,7 +49,9 @@ Run:
 !pip install --no-cache-dir -r requirements.txt
 ```
 
-### Step 4: Launch the app
+If Colab asks for a runtime restart after installation, restart the runtime and then run the notebook cells again from the top.
+
+### Step 4 — Launch the application
 
 Run:
 
@@ -143,95 +59,132 @@ Run:
 !python app.py
 ```
 
-Once the application starts, Colab will display a Gradio link. Open that link to use the interface.
+When the Gradio server starts, Colab will print a local URL and usually a shareable public Gradio link.
 
-## Standard workflow
+### Step 5 — Use the app
 
-A typical calculation proceeds as follows:
+Open the Gradio link and then:
 
-1. Upload the defective nanocrystal structure.
-2. Upload either one ligand file, multiple ligand files, or one ZIP archive containing ligand files.
-3. Optionally upload a trained MatGL/M3GNet model ZIP.
-4. Enter the defect-site coordinates and relevant workflow parameters.
-5. Run the attachment and relaxation workflow.
-6. Review logs, energies, and downloadable output files.
+- upload the defective nanocrystal structure,
+- upload one ligand file, multiple ligand files, or a ZIP archive containing many ligands,
+- optionally upload a trained MatGL / M3GNet model ZIP,
+- set the defect-site coordinates and workflow parameters,
+- run the workflow,
+- download the generated structures and summary files.
 
-## Output files
+## Local installation
 
-The application can generate the following outputs.
+For users who prefer to run the application on their own machine:
 
-### Summary CSV
+### Step 1 — Clone the repository
 
-The summary table may include:
-
-- ligand name
-- detected ligand family
-- number of attached configurations
-- best relaxed configuration name
-- best relaxed NC+ligand energy
-- relaxed neutral ligand energy
-- adsorption energy
-- workflow status
-
-### ZIP of attached NC+ligand configurations
-
-Contains candidate attached structures before relaxation.
-
-### ZIP of best relaxed NC+ligand structures
-
-Contains the lowest-energy relaxed structure for each ligand, when relaxation succeeds.
-
-## Adsorption energy
-
-The adsorption energy is evaluated as:
-
-```text
-E_ads = E[NC+VCl+ligand] - (E[NC+VCl] + E[ligand] - 1/2 E[H2])
+```bash
+git clone https://github.com/kushalsamanta/Vx-passivation-mlff.git
+cd Vx-passivation-mlff
 ```
 
-with:
+### Step 2 — Create a virtual environment
 
-```text
-1/2 E[H2] = -3.393237 eV
+On Linux or macOS:
+
+```bash
+python -m venv venv
+source venv/bin/activate
 ```
 
-## Notes for users
+On Windows:
 
-- The application supports both single-ligand and batch-ligand calculations.
-- When relaxation is enabled and a valid model ZIP is supplied, the app relaxes the separate neutral ligand.
-- The app also relaxes the selected NC+ligand configurations and retains the most stable relaxed structure.
-- If no model ZIP is supplied, the structure-generation workflow can still be used without relaxation.
+```bat
+python -m venv venv
+venv\Scripts\activate
+```
 
-## Troubleshooting
+### Step 3 — Install dependencies
 
-### Model loading fails
+```bash
+pip install --no-cache-dir -r requirements.txt
+```
 
-Check that:
+### Step 4 — Run the app
 
-- the ZIP contains `model.pt`, `state.pt`, and `model.json`,
-- these files are either at the ZIP root or inside one folder,
-- the installed package versions are compatible with the uploaded model.
+```bash
+python app.py
+```
 
-### No relaxed structure is produced
+Then open the Gradio URL shown in the terminal.
 
-Check that:
+## Inputs expected by the application
 
-- relaxation is enabled,
-- a valid model ZIP has been uploaded,
-- the log window does not report a backend or model-loading error.
+### 1. Defective nanocrystal structure
 
-### No valid attached configuration is found
+Accepted formats include:
 
-Check that:
+- POSCAR / VASP
+- CIF
+- POSCAR-like structure files
 
-- the defect-site coordinates are correct,
-- the ligand contains a supported passivating head group,
-- the uploaded geometry is chemically reasonable.
+### 2. Ligand inputs
 
-## Authors
+The application accepts:
 
-Kushal Samanta<sup>a,b</sup>, Jyoti Bharti<sup>c</sup>, Arun Mannodi-Kanakkithodi<sup>b*</sup>, Dibyajyoti Ghosh<sup>a,c*</sup>
+- a single ligand file,
+- multiple ligand files, or
+- a ZIP archive containing multiple ligand structures.
 
-<sup>a</sup> Department of Materials Science and Engineering, Indian Institute of Technology, Delhi-110016, India  
-<sup>b</sup> School of Materials Engineering, Purdue University, West Lafayette, IN 47907, United States of America  
-<sup>c</sup> Department of Chemistry, Indian Institute of Technology, Delhi-110016, India
+### 3. Optional trained MatGL / M3GNet model ZIP
+
+The uploaded ZIP should contain these files:
+
+- `model.pt`
+- `state.pt`
+- `model.json`
+
+Accepted ZIP layouts:
+
+```text
+model.zip
+├── model.pt
+├── state.pt
+└── model.json
+```
+
+or
+
+```text
+model.zip
+└── out/
+    ├── model.pt
+    ├── state.pt
+    └── model.json
+```
+
+## What the workflow does
+
+For each ligand, the application can:
+
+1. identify the ligand head-group family,
+2. generate multiple attached NC+ligand structures,
+3. save candidate configurations,
+4. relax the neutral ligand with M3GNet,
+5. relax the attached NC+ligand structures with M3GNet,
+6. select the lowest-energy relaxed NC+ligand configuration,
+7. estimate adsorption energy,
+8. export a summary CSV and downloadable ZIP files.
+
+## Outputs
+
+The application produces:
+
+- a summary CSV containing ligand-wise results,
+- a ZIP archive of attached NC+ligand candidate structures,
+- a ZIP archive of best relaxed NC+ligand structures when relaxation succeeds.
+
+## Notes
+
+- The M3GNet relaxation step is optional. The structure-generation workflow can still be used without uploading a model ZIP.
+- When a compatible model ZIP is provided, the app attempts to relax both the neutral ligand and the NC+ligand structures.
+- Adsorption energies are evaluated from the workflow energies printed in the app and written to the summary file.
+
+## Citation / acknowledgement
+
+If this workflow is useful in academic work, please cite the related research outputs from the repository authors where appropriate.
