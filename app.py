@@ -55,6 +55,10 @@ PHI_STEP_DEG = 10
 # Single Pb—O target distance used for placement/orientation search
 PB_O_TARGET_DIST = 2.75
 
+# NEW: defect-site/Pb reference must stay farther than this
+# from every ligand atom except the bound anchor O
+PB_OTHER_MIN_DIST = 2.5
+
 # General substrate-vs-ligand non-overlap thresholds
 GENERAL_H_MIN_DIST = 1.0
 GENERAL_OTHER_MIN_DIST = 1.5
@@ -90,14 +94,12 @@ def parse_xyz_triplet(x, y, z) -> np.ndarray:
     return np.array([float(x), float(y), float(z)], dtype=float)
 
 
-
 def get_covalent_radius(el: str) -> float:
     cov_r = {
         "H": 0.31, "C": 0.76, "N": 0.71, "O": 0.66,
         "F": 0.57, "P": 1.07, "S": 1.05, "Cl": 1.02,
     }
     return cov_r.get(el, 1.0)
-
 
 
 def rotation_matrix_from_vectors(a: np.ndarray, b: np.ndarray) -> np.ndarray:
@@ -128,7 +130,6 @@ def rotation_matrix_from_vectors(a: np.ndarray, b: np.ndarray) -> np.ndarray:
     return np.eye(3) + K * s + K @ K * (1 - c)
 
 
-
 def check_ads_sub_thresholds(
     structure: Structure,
     n_substrate: int,
@@ -154,7 +155,6 @@ def check_ads_sub_thresholds(
     return True, overall_min, None, None
 
 
-
 def check_intramolecular_overlaps(structure: Structure, n_substrate: int, factor: float = 0.8):
     overlaps = []
     for i in range(n_substrate, len(structure.sites)):
@@ -167,7 +167,6 @@ def check_intramolecular_overlaps(structure: Structure, n_substrate: int, factor
             if d < factor * (r1 + r2):
                 overlaps.append((i, j, d))
     return overlaps
-
 
 
 def check_substrate_cs_thresholds(structure: Structure, n_substrate: int):
@@ -201,7 +200,6 @@ def check_substrate_cs_thresholds(structure: Structure, n_substrate: int):
     return ok, overall_min, worst_margin, worst_pair
 
 
-
 def min_distance_points_to_any_ligand_atom(structure: Structure, n_substrate: int,
                                            points: List[np.ndarray]):
     md = float("inf")
@@ -215,7 +213,6 @@ def min_distance_points_to_any_ligand_atom(structure: Structure, n_substrate: in
                 md = d
                 best = (p_idx, i)
     return md, best
-
 
 
 def per_point_min_distance_to_any_ligand_atom(structure: Structure, n_substrate: int,
@@ -233,7 +230,6 @@ def per_point_min_distance_to_any_ligand_atom(structure: Structure, n_substrate:
                 best_i = i
         out.append((p_idx, best_d, best_i))
     return out
-
 
 
 def check_cs_target_thresholds(structure: Structure, n_substrate: int,
@@ -270,6 +266,42 @@ def check_cs_target_thresholds(structure: Structure, n_substrate: int,
     return ok, overall_min, worst_margin, worst_pair, per_target
 
 
+def check_pb_reference_threshold_excluding_anchor(
+    structure: Structure,
+    n_substrate: int,
+    pb_vacancy_site: np.ndarray,
+    anchor_abs_idx: int,
+):
+    """Defect-site/Pb reference must remain > PB_OTHER_MIN_DIST from all ligand atoms
+    except the bound anchor O atom.
+    """
+    overall_min = float("inf")
+    worst_margin = float("inf")
+    worst_pair = (None, None)
+
+    ok = True
+    pb_vacancy_site = np.array(pb_vacancy_site, dtype=float)
+
+    for i in range(n_substrate, len(structure.sites)):
+        if i == anchor_abs_idx:
+            continue
+        ai = np.array(structure.sites[i].coords)
+        d = np.linalg.norm(ai - pb_vacancy_site)
+        overall_min = min(overall_min, d)
+        margin = d - PB_OTHER_MIN_DIST
+        if margin < worst_margin:
+            worst_margin = margin
+            worst_pair = (i, structure.sites[i].species_string)
+        if d <= PB_OTHER_MIN_DIST:
+            ok = False
+
+    if overall_min == float("inf"):
+        overall_min = float("inf")
+        worst_margin = float("inf")
+        worst_pair = (None, None)
+
+    return ok, overall_min, worst_margin, worst_pair
+
 
 def _nearest_H_to_O(structure: Structure, O_index: int,
                     primary: float = 1.25, fallback: float = 1.65):
@@ -290,7 +322,6 @@ def _nearest_H_to_O(structure: Structure, O_index: int,
     return (best, best_d) if best is not None else (None, None)
 
 
-
 def remap_after_deletions(removed_indices: List[int], idx_list: List[int]) -> List[int]:
     removed = sorted(set(removed_indices))
 
@@ -298,7 +329,6 @@ def remap_after_deletions(removed_indices: List[int], idx_list: List[int]) -> Li
         return idx - sum(1 for r in removed if r < idx)
 
     return [shift(i) for i in idx_list]
-
 
 
 def remove_one_H_from_group(mol_struct: Structure, O_group: List[int], logs: List[str]):
@@ -323,7 +353,6 @@ def remove_one_H_from_group(mol_struct: Structure, O_group: List[int], logs: Lis
     O_group_new = remap_after_deletions([h_star], O_group)
     oi_star_new = remap_after_deletions([h_star], [oi_star])[0]
     return mol_struct, O_group_new, oi_star_new, h_star
-
 
 
 def _group_outward_score(coords: np.ndarray, O_group: List[int]) -> float:
@@ -363,7 +392,6 @@ def find_phosphonic_candidates(structure: Structure):
     return cands
 
 
-
 def find_sulfonic_candidates(structure: Structure):
     coords = np.array(structure.cart_coords)
     species = [s.species_string for s in structure.sites]
@@ -391,7 +419,6 @@ def find_sulfonic_candidates(structure: Structure):
     return cands
 
 
-
 def find_carboxylic_candidates(structure: Structure):
     coords = np.array(structure.cart_coords)
     species = [s.species_string for s in structure.sites]
@@ -417,7 +444,6 @@ def find_carboxylic_candidates(structure: Structure):
         })
     cands.sort(key=lambda d: d["score"], reverse=True)
     return cands
-
 
 
 def get_candidates_by_mode(structure: Structure, mode: str):
@@ -536,15 +562,23 @@ def place_with_anchor(
             f"required > {req:.1f} Å"
         )
 
-    return combined, anchor_abs, other_abs
+    ok_pb_other, pb_other_min, _pb_margin, pb_other_pair = check_pb_reference_threshold_excluding_anchor(
+        combined, n_substrate, pb_vacancy_site, anchor_abs
+    )
+    if pb_other_pair[0] is not None:
+        logs.append(
+            f"    Initial min(Pb reference ↔ ligand atom excluding anchor O) = {pb_other_min:.3f} Å "
+            f"[ligand atom index {pb_other_pair[0]} ({pb_other_pair[1]})]; "
+            f"required > {PB_OTHER_MIN_DIST:.1f} Å"
+        )
 
+    return combined, anchor_abs, other_abs
 
 
 def structure_signature(structure: Structure, n_substrate: int, decimals: int = 2):
     species = tuple(site.species_string for site in structure.sites[n_substrate:])
     coords = np.round(np.array(structure.cart_coords[n_substrate:]), decimals=decimals)
     return (species, tuple(map(tuple, coords)))
-
 
 
 def evaluate_pose(
@@ -577,14 +611,29 @@ def evaluate_pose(
     d_ref_any, ref_pair = min_distance_points_to_any_ligand_atom(structure, n_substrate, ref_points)
     ok_ref_any = d_ref_any >= REFERENCE_POINT_MIN_DIST
 
+    ok_pb_other, d_pb_other, pb_other_margin, pb_other_info = check_pb_reference_threshold_excluding_anchor(
+        structure, n_substrate, pb_vacancy_site, anchor_abs_idx
+    )
+
     ok_pb_o = abs(pb_o_now - PB_O_TARGET_DIST) <= 0.05
 
-    valid = ok_pb_o and ok_cs_window and ok_gen and (not intra) and ok_pair and ok_cs_target and ok_ref_any
+    valid = (
+        ok_pb_o
+        and ok_cs_window
+        and ok_gen
+        and (not intra)
+        and ok_pair
+        and ok_cs_target
+        and ok_ref_any
+        and ok_pb_other
+    )
+
     score = (
         abs(min_cs - CS_D_IDEAL),
         abs(pb_o_now - PB_O_TARGET_DIST),
         -pair_margin,
         -target_margin,
+        -pb_other_margin,
         -d_ref_any,
         -dmin_gen,
     )
@@ -600,12 +649,14 @@ def evaluate_pose(
         "d_cs_target": d_cs_target,
         "target_margin": target_margin,
         "d_ref_any": d_ref_any,
+        "d_pb_other": d_pb_other,
+        "pb_other_margin": pb_other_margin,
         "dlist": dlist,
         "pair_info": pair_info,
         "target_info": target_info,
+        "pb_other_info": pb_other_info,
         "ref_pair": ref_pair,
     }
-
 
 
 def search_orientations_about_anchor(
@@ -622,6 +673,7 @@ def search_orientations_about_anchor(
     logs.append(f"    [OVERLAP RULE] All substrate Cs vs ligand atoms: H > {CS_H_MIN_DIST:.1f} Å, non-H > {CS_OTHER_MIN_DIST:.1f} Å")
     logs.append(f"    [OVERLAP RULE] The 3 specified Cs targets vs ligand atoms: H > {CS_H_MIN_DIST:.1f} Å, non-H > {CS_OTHER_MIN_DIST:.1f} Å")
     logs.append(f"    [OVERLAP RULE] For Pb-vacancy + 3 Cs reference points, min (reference point ↔ any ligand atom) ≥ {REFERENCE_POINT_MIN_DIST:.1f} Å")
+    logs.append(f"    [OVERLAP RULE] Pb/defect reference to every ligand atom except anchor O must be > {PB_OTHER_MIN_DIST:.1f} Å")
     logs.append(
         f"    Building all combinations for randomized exhaustive search: "
         f"Pb–O fixed at {PB_O_TARGET_DIST:.2f} Å, "
@@ -712,7 +764,8 @@ def search_orientations_about_anchor(
         logs.append(
             f"    Best valid pose: Pb–O={best['pb_o']:.3f} Å, θ={best['theta']}°, φ={best['phi']}° | "
             f"min Cs–O_other={best['min_cs']:.3f} Å | min_clear={best['dmin_gen']:.3f} Å | "
-            f"substrate-Cs min={best['d_pair']:.3f} Å | target-Cs min={best['d_cs_target']:.3f} Å"
+            f"substrate-Cs min={best['d_pair']:.3f} Å | target-Cs min={best['d_cs_target']:.3f} Å | "
+            f"Pb-other min={best['d_pb_other']:.3f} Å"
         )
         return top_valid, True
 
@@ -722,7 +775,8 @@ def search_orientations_about_anchor(
             f"    No fully valid pose found. Returning the best near-match only: "
             f"Pb–O={best['pb_o']:.3f} Å, θ={best['theta']}°, φ={best['phi']}° | "
             f"min Cs–O_other={best['min_cs']:.3f} Å | min_clear={best['dmin_gen']:.3f} Å | "
-            f"substrate-Cs min={best['d_pair']:.3f} Å | target-Cs min={best['d_cs_target']:.3f} Å"
+            f"substrate-Cs min={best['d_pair']:.3f} Å | target-Cs min={best['d_cs_target']:.3f} Å | "
+            f"Pb-other min={best['d_pb_other']:.3f} Å"
         )
         return [best], False
 
@@ -864,7 +918,8 @@ def attach_ligand_configs(
         m = pose["metrics"]
         logs.append(
             f"  config{i}: family={pose['family']}, valid={m['valid']}, Pb–O={m['pb_o']:.3f} Å, "
-            f"min Cs–O_other={m['min_cs']:.3f} Å, substrate-Cs min={m['d_pair']:.3f} Å, target-Cs min={m['d_cs_target']:.3f} Å"
+            f"min Cs–O_other={m['min_cs']:.3f} Å, substrate-Cs min={m['d_pair']:.3f} Å, "
+            f"target-Cs min={m['d_cs_target']:.3f} Å, Pb-other min={m['d_pb_other']:.3f} Å"
         )
 
     detected_family = selected[0]["family"]
@@ -915,7 +970,6 @@ def load_m3gnet_potential_from_zip(zip_path: str):
     )
 
 
-
 def build_matgl_ase_calculator(potential):
     errors = []
 
@@ -961,7 +1015,6 @@ def build_matgl_ase_calculator(potential):
         errors.append(f"matgl.ext._ase_dgl.PESCalculator: {e}")
 
     raise RuntimeError("Could not create a MatGL ASE calculator. Tried " + " | ".join(errors))
-
 
 
 def relax_with_m3gnet(struct: Structure, potential, fmax: float, steps: int):
@@ -1066,10 +1119,8 @@ def save_structure(structure: Structure, path: str):
     Poscar(structure).write_file(path)
 
 
-
 def ensure_dir(path: str):
     os.makedirs(path, exist_ok=True)
-
 
 
 def create_zip_from_folder(folder_path: str, zip_prefix: str) -> str:
@@ -1084,13 +1135,11 @@ def create_zip_from_folder(folder_path: str, zip_prefix: str) -> str:
     return zip_path
 
 
-
 def ligand_stem_from_path(path: str) -> str:
     base = os.path.basename(path)
     stem = os.path.splitext(base)[0]
     safe = "".join(ch if ch.isalnum() or ch in ("-", "_") else "_" for ch in stem)
     return safe or "ligand"
-
 
 
 def collect_input_ligand_paths(single_ligand_file, ligand_batch_files):
@@ -1131,7 +1180,6 @@ def collect_input_ligand_paths(single_ligand_file, ligand_batch_files):
             seen.add(rp)
 
     return deduped, temp_extract_dirs
-
 
 
 def write_summary_csv(rows: List[dict]) -> str:
@@ -1237,6 +1285,7 @@ def run_app(
     status_lines.append(f"Loaded {len(ligand_paths)} ligand structure(s).")
     status_lines.append(f"Search mode = {family_mode}; maximum saved attached configurations per ligand = {MAX_CONFIGS_PER_LIGAND}")
     status_lines.append(f"Specific Cs thresholds: H > {CS_H_MIN_DIST:.1f} Å, non-H > {CS_OTHER_MIN_DIST:.1f} Å")
+    status_lines.append(f"Pb reference to all ligand atoms except anchor O must be > {PB_OTHER_MIN_DIST:.1f} Å")
     status_lines.append("")
     yield pack()
 
@@ -1437,7 +1486,6 @@ def run_app(
     return
 
 
-
 # ============================================================
 # Gradio UI
 # ============================================================
@@ -1510,6 +1558,7 @@ with gr.Blocks(title="X-type Ligand Passivation at V_X Sites on Nanocrystal Surf
   • Upload either one ligand file, or multiple ligand files / one ZIP archive containing many ligand files.<br>
   • For each ligand, the app generates multiple possible attached NC+ligand configurations from the initial scratch structures, with a maximum of <strong>{MAX_CONFIGS_PER_LIGAND}</strong> saved configurations.<br>
   • The trained M3GNet model evaluates the relaxed structure of the separate ligand molecule as well as the NC–ligand passivated system.<br>
+  • The defect-site/Pb reference must remain farther than <strong>{PB_OTHER_MIN_DIST:.1f} Å</strong> from every ligand atom except the bound anchor O.<br>
   • The adsorption energy is evaluated as:<br>
     <code>E_ads = E[NC+VCl+ligand] - (E[NC+VCl] + E[ligand] - 1/2 E[H2])</code><br>
     with <code>1/2 E[H2] = {HALF_H2_ENERGY:.6f} eV</code>.<br>
